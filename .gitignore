@@ -1,0 +1,9 @@
+# Dev
+Include
+Lib
+Scripts
+pyvenv.cfg
+
+
+# Secret
+.env
