@@ -80,7 +80,7 @@ class EPGRecoding():
         """
         start_at = datetime.fromtimestamp(epg.start_at/1000)
         wait_time = start_at - datetime.now()
-        if wait_time.total_seconds() > 3600:
+        if wait_time.total_seconds() > 3610:
             print(f'Wait for the start of {epg.name} {start_at}')
             sleep(3600)
             return True
