@@ -105,6 +105,7 @@ class EPGRecoding():
     def _stop_record(self):
         """Recording stop."""
         self.obs_client.stop_record()
+        sleep(5) # interval
 
 
 if __name__ == '__main__':
