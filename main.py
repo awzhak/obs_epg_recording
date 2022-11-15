@@ -19,18 +19,17 @@ class Environments():
 
 class OBSClient():
     @classmethod
-    def load(cls, host_name: str, port: str, password: str = None) -> obs.ReqClient:
+    def load(cls, host_name: str, port: str, password: Optional[str] = None) -> obs.ReqClient:
         return obs.ReqClient(host=host_name, port=port, password=password)
 
 
-URL = 'http://192.168.1.100:8888'
 class EPGStation():
     def __init__(self) -> None:
         pass
 
-    def get_atx_reserve() -> Optional[EPG]:
+    def get_atx_reserve(self) -> Optional[EPG]:
         ATX_CHANNEL_ID = 6553400605
-        result = httpx.get(f'{URL}/api/reserves?isHalfWidth=true&limit=100')
+        result = httpx.get('http://192.168.1.100:8888/api/reserves?isHalfWidth=true&limit=100')
         atx_reserves = list(filter(lambda x: x['channelId'] == ATX_CHANNEL_ID, result.json().get('reserves')))
         return EPG(
             id=atx_reserves[0]['id'],
@@ -50,7 +49,6 @@ class EPGRecoding():
 
         while True:
             atx_reserve = EPGStation.get_atx_reserve()
-
             # If no recording is reserved, standby for 1 hour
             if atx_reserve is None:
                 sleep(3600)
@@ -65,8 +63,7 @@ class EPGRecoding():
             sleep(end_at.total_seconds() - 10)
             self._stop_record()
             logger.info(f'End recording {atx_reserve.name}')
-            sleep(5) # interval
-
+            sleep(5)  # interval
 
     def wait_for_program_to_start(self, epg: EPG) -> bool:
         """Wait for the program to start.
@@ -90,16 +87,13 @@ class EPGRecoding():
         else:
             return False
 
-
     def _set_scene(self, scene_name: str):
         # scene_name = 'Mirabox AT-X'
         return self.obs_client.scene(scene_name)
 
-
     def _start_record(self):
         """Recording start."""
         self.obs_client.start_record()
-
 
     def _stop_record(self):
         """Recording stop."""
