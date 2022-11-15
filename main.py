@@ -27,7 +27,8 @@ class EPGStation():
     def __init__(self) -> None:
         pass
 
-    def get_atx_reserve(self) -> Optional[EPG]:
+    @classmethod
+    def get_atx_reserve(cls) -> Optional[EPG]:
         ATX_CHANNEL_ID = 6553400605
         result = httpx.get('http://192.168.1.100:8888/api/reserves?isHalfWidth=true&limit=100')
         atx_reserves = list(filter(lambda x: x['channelId'] == ATX_CHANNEL_ID, result.json().get('reserves')))
@@ -101,4 +102,7 @@ class EPGRecoding():
 
 
 if __name__ == '__main__':
-    EPGRecoding().run()
+    try:
+        EPGRecoding().run()
+    except KeyboardInterrupt:
+        logger.info('Exit obg-epg-recording')
