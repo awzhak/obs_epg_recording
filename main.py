@@ -1,5 +1,4 @@
 import os
-import logging
 from time import sleep
 from typing import Optional
 from datetime import datetime
@@ -7,9 +6,8 @@ import httpx
 from dotenv import load_dotenv
 import obsws_python as obs
 from dataclassies import EPG
+from logger import logger
 
-
-logger = logging.Logger('obs-epg-recording')
 
 class Environments():
     def __init__(self) -> None:
@@ -60,13 +58,14 @@ class EPGRecoding():
 
             if self.wait_for_program_to_start(atx_reserve):
                 continue
-            else:
-                print(f'Start recording {atx_reserve.name}')
-                self._start_record()
-                end_at = datetime.fromtimestamp(atx_reserve.end_at/1000) - datetime.now()
-                sleep(end_at.total_seconds())
-                self._stop_record()
-                print(f'End recording {atx_reserve.name}')
+
+            logger.info(f'Start recording {atx_reserve.name}')
+            self._start_record()
+            end_at = datetime.fromtimestamp(atx_reserve.end_at/1000) - datetime.now()
+            sleep(end_at.total_seconds() - 10)
+            self._stop_record()
+            logger.info(f'End recording {atx_reserve.name}')
+            sleep(5) # interval
 
 
     def wait_for_program_to_start(self, epg: EPG) -> bool:
@@ -81,11 +80,11 @@ class EPGRecoding():
         start_at = datetime.fromtimestamp(epg.start_at/1000)
         wait_time = start_at - datetime.now()
         if wait_time.total_seconds() > 3610:
-            print(f'Wait for the start of {epg.name} {start_at}')
+            logger.info(f'Wait for the start of {epg.name} at {start_at}')
             sleep(3600)
             return True
         elif wait_time.total_seconds() > 10:
-            print(f'Wait for the start of {epg.name} {start_at}')
+            logger.info(f'Wait for the start of {epg.name} at {start_at}')
             sleep(wait_time.total_seconds() - 10)
             return False
         else:
@@ -105,7 +104,6 @@ class EPGRecoding():
     def _stop_record(self):
         """Recording stop."""
         self.obs_client.stop_record()
-        sleep(5) # interval
 
 
 if __name__ == '__main__':

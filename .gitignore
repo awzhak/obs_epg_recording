@@ -3,7 +3,10 @@ Include
 Lib
 Scripts
 pyvenv.cfg
-
+*.pyc
 
 # Secret
 .env
+
+# log
+*.log
