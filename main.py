@@ -1,6 +1,6 @@
 import os
 from time import sleep
-from typing import Optional
+from typing import List, Optional
 from datetime import datetime
 import httpx
 from dotenv import load_dotenv
@@ -28,16 +28,16 @@ class EPGStation():
         pass
 
     @classmethod
-    def get_atx_reserve(cls) -> Optional[EPG]:
+    def get_atx_reserves(cls) -> Optional[List[EPG]]:
         ATX_CHANNEL_ID = 6553400605
         result = httpx.get('http://192.168.1.100:8888/api/reserves?isHalfWidth=true&limit=100')
         atx_reserves = list(filter(lambda x: x['channelId'] == ATX_CHANNEL_ID, result.json().get('reserves')))
-        return EPG(
-            id=atx_reserves[0]['id'],
-            name=atx_reserves[0]['name'],
-            start_at=atx_reserves[0]['startAt'],
-            end_at=atx_reserves[0]['endAt']
-        ) if atx_reserves else None
+        return [EPG(
+            id=atx_reserve['id'],
+            name=atx_reserve['name'],
+            start_at=atx_reserve['startAt'],
+            end_at=atx_reserve['endAt'],
+        ) for atx_reserve in atx_reserves] if atx_reserves else None
 
 
 class EPGRecoding():
@@ -49,7 +49,8 @@ class EPGRecoding():
         self.obs_client = OBSClient.load(env.host_name, env.port, env.password)
 
         while True:
-            atx_reserve = EPGStation.get_atx_reserve()
+            atx_reserves = EPGStation.get_atx_reserves()
+            atx_reserve = self.find_reservations_to_record_next(atx_reserves)
             # If no recording is reserved, standby for 1 hour
             if atx_reserve is None:
                 sleep(3600)
@@ -65,6 +66,17 @@ class EPGRecoding():
             self._stop_record()
             logger.info(f'End recording {atx_reserve.name}')
             sleep(5)  # interval
+
+    def find_reservations_to_record_next(self, reserves: List[EPG]) -> Optional[EPG]:
+        if reserves is None:
+            return None
+
+        end_at = datetime.fromtimestamp(reserves[0].end_at/1000)
+        end_wait_time = end_at - datetime.now()
+        if end_wait_time.total_seconds() > 10:
+            return reserves[0]
+        else:
+            return reserves[1] if len(reserves) > 1 else None
 
     def wait_for_program_to_start(self, epg: EPG) -> bool:
         """Wait for the program to start.
