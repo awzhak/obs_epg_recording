@@ -1,15 +1,18 @@
+"""obs egp recording."""
 import os
+from datetime import datetime
 from time import sleep
 from typing import List, Optional
-from datetime import datetime
 import httpx
-from dotenv import load_dotenv
 import obsws_python as obs
+from dotenv import load_dotenv
 from dataclassies import EPG
 from logger import logger
 
 
 class Environments():
+    """Environments."""
+
     def __init__(self) -> None:
         load_dotenv()
         self.host_name = os.getenv('HOST_NAME')
@@ -18,6 +21,8 @@ class Environments():
 
 
 class OBSClient():
+    """OBSClient."""
+
     @classmethod
     def load(cls, host_name: str, port: str, password: Optional[str] = None) -> obs.ReqClient:
         return obs.ReqClient(host=host_name, port=port, password=password)
@@ -65,9 +70,18 @@ class EPGRecoding():
             sleep(end_at.total_seconds() - 10)
             self._stop_record()
             logger.info(f'End recording {atx_reserve.name}')
+            logger.info(f'Recording file name: {self._out_file_name(atx_reserve)}')
             sleep(5)  # interval
 
     def find_reservations_to_record_next(self, reserves: List[EPG]) -> Optional[EPG]:
+        """Find out the next reservation to record.
+
+        Args:
+            reserves (List[EPG]): _description_
+
+        Returns:
+            Optional[EPG]: _description_
+        """
         if reserves is None:
             return None
 
@@ -111,6 +125,11 @@ class EPGRecoding():
     def _stop_record(self):
         """Recording stop."""
         self.obs_client.stop_record()
+
+    def _out_file_name(self, epg: EPG):
+        """Output file name."""
+        start_at = datetime.fromtimestamp(epg.start_at/1000)
+        return f'{start_at.strftime("%Y-%m-%d %H-%M-%S")}_{epg.name}.mkv'
 
 
 if __name__ == '__main__':
